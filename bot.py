@@ -3,10 +3,12 @@ from telebot import types
 import random
 import json
 import os
+from flask import Flask, request
 
 
 TOKEN = os.getenv("BOT_TOKEN")
 DATA_FILE = "movies.json"
+app = Flask(__name__)
 
 bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
 bot.remove_webhook()
@@ -286,5 +288,41 @@ def clear_all_yes(call):
 
 # ------------------
 
-print("🤖 Бот запущен")
-bot.infinity_polling()
+# Webhook endpoint - это для render
+@app.route('/' + TOKEN, methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    return 'OK'
+
+@app.route('/')
+def index():
+    return 'Bot is running!'
+
+@app.route('/health')
+def health():
+    return 'OK', 200
+
+
+
+if __name__ == '__main__':
+    # Удаляем вебхук при запуске
+    bot.remove_webhook()
+    
+    # Устанавливаем вебхук
+    # Получите ваш URL из Render Dashboard после деплоя
+    # Или используйте переменную окружения
+    webhook_url = os.getenv('RENDER_EXTERNAL_URL', '') + '/' + TOKEN
+    if webhook_url.startswith('http'):
+        bot.set_webhook(url=webhook_url)
+        print(f"Webhook установлен: {webhook_url}")
+    
+    # Запускаем Flask сервер
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
+    print("🤖 Бот запущен")
+    bot.infinity_polling()
