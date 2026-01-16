@@ -4,7 +4,8 @@ import random
 import json
 import os
 
-TOKEN = "8514427167:AAFWGxMeLM9ut4Lp7Vo-j_uJCccwK4aecw4"
+
+TOKEN = os.getenv("BOT_TOKEN")
 DATA_FILE = "movies.json"
 
 bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
